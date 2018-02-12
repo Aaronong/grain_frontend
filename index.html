@@ -25,7 +25,7 @@
         <h1>Rate Your Dish!</h1>
 
         <!-- <h3>Help us serve you better. Your feedback will help us to design more exciting meals in the future.</h3> -->
-        <div class="flex-container" v-for="order in orders">
+        <div class="flex-container" v-for="(order, order_index) in orders">
             <div class="banner">
                 Order ID: {{order.order_id}}
             </div>
@@ -41,7 +41,7 @@
                 </div>
                 <div v-bind:class="{comment: !order.feedback_submitted}">
                     <!-- Trigger the modal with a button -->
-                    <feedbackmodal class="unselectedHeart" v-bind:order="order"></feedbackmodal>
+                    <feedbackmodal v-on:submit="submitFeedback(order_index)" class="unselectedHeart" v-bind:order="order"></feedbackmodal>
                     <!-- <button type="button" class="btn btn-info btn-lg" data-toggle="modal" v-bind:data-target="'#'+order.order_id">Open Modal</button> -->
 
                     <comment-available v-if="!order.feedback_submitted" data-toggle="modal" v-bind:data-target="'#'+order.order_id"></comment-available>

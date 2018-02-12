@@ -102,10 +102,20 @@ Vue.component("feedbackmodal", {
         return mapped;
       });
       const modal_id = "#" + this.order.order_id;
+      this.$emit("submit");
       axios
-        .post(posturl, { feedbacks: processedFeedback })
+        .post(
+          posturl,
+          {
+            feedbacks: processedFeedback
+          },
+          { headers: { AUTHORIZATION: "eyJ1c2VyIjogIkFETUlOIn0=" } }
+        )
         .then(function(response) {
           console.log(response);
+          alert(
+            "Thank you for your feedback! We will use the information to serve you better!"
+          );
           $(modal_id).modal("hide");
         })
         .catch(function(error) {
@@ -193,10 +203,15 @@ var app = new Vue({
   data: {
     orders: []
   },
+  methods: {
+    submitFeedback: function(index) {
+      this.orders[index].feedback_submitted = true;
+    }
+  },
   created: function() {
     orderData = this.orders;
     axios
-      .get(url)
+      .get(url, { headers: { AUTHORIZATION: "eyJ1c2VyIjogIkFETUlOIn0=" } })
       .then(function(response) {
         response.data.forEach(function(element) {
           orderData.push(element);
