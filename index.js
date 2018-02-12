@@ -1,4 +1,5 @@
 const url = "https://grain-interview.herokuapp.com/orders";
+// const url = "http://0.0.0.0:3000/orders";
 
 Vue.component("dish-logo", {
   template: `<svg onclick="reloadPage()" version="1.1" id="logo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -53,9 +54,119 @@ Vue.component("downvote", {
 </svg>`
 });
 
-Vue.component("delivery-item", {
-  props: ["delivery"],
-  template: `<p>hi</p>`
+function order_to_feedback_list(order) {
+  feedbacks = [];
+  feedbacks.push({
+    ratable_id: order.id,
+    ratable_type: "DeliveryOrder",
+    rating: 0,
+    comment: ""
+  });
+  order.order_items.forEach(function(element) {
+    feedbacks.push({
+      name: element.name,
+      ratable_id: element.order_item_id,
+      ratable_type: "OrderItem",
+      rating: 0,
+      comment: ""
+    });
+  });
+  console.log(feedbacks);
+  return feedbacks;
+}
+
+Vue.component("feedbackmodal", {
+  props: ["order"],
+  data: function() {
+    return {
+      feedbacks: order_to_feedback_list(this.order)
+    };
+  },
+  methods: {
+    upvoteFood: function(index) {
+      console.log(this.feedbacks[index]);
+      this.feedbacks[index].rating = this.feedbacks[index].rating === 1 ? 0 : 1;
+    },
+    downvoteFood: function(index) {
+      console.log(this.feedbacks[index]);
+      this.feedbacks[index].rating =
+        this.feedbacks[index].rating === -1 ? 0 : -1;
+    },
+    submit: function() {
+      var posturl = url + "/" + this.order.id + "/feedbacks";
+      var processedFeedback = this.feedbacks.map(function(item) {
+        var mapped = JSON.parse(JSON.stringify(item));
+        if (mapped.name) {
+          delete mapped.name;
+        }
+        return mapped;
+      });
+      const modal_id = "#" + this.order.order_id;
+      axios
+        .post(posturl, { feedbacks: processedFeedback })
+        .then(function(response) {
+          console.log(response);
+          $(modal_id).modal("hide");
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    }
+  },
+  template: `
+  <div v-bind:id="order.order_id" class="modal fade" role="dialog">
+      <div class="modal-dialog">
+
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal">&times;</button>
+                  <div class="flex-container">
+                      <h1 class="modal-title">Rate order {{order.order_id}}</h1>
+                  </div>
+              </div>
+              <div class="modal-body flex-container">
+                  <div class="banner">
+                      How was our delivery?
+                  </div>
+                  <div class="row-container">
+                      <a v-on:click="upvoteFood(0)">
+                          <upvote v-bind:rating="feedbacks[0].rating"></upvote>
+                      </a>
+                      <h2>Courier</h2>
+                      <a v-on:click="downvoteFood(0)">
+                        <downvote v-bind:rating="feedbacks[0].rating"></downvote>
+                      </a>
+                  </div>
+
+                  <input type="text" class="form-control" v-model="feedbacks[0].comment" placeholder="How may we serve you better?">
+
+                  <div class="banner">
+                      How was our food?
+                  </div>
+                  <div class="flex-container" v-for="(food, index) in feedbacks">
+                      <div v-if="food.name">
+                        <div class="row-container">
+                            <a v-on:click="upvoteFood(index)">
+                              <upvote v-bind:rating="food.rating"></upvote>
+                            </a>
+                            <h2>{{food.name}}</h2>
+                            <a v-on:click="downvoteFood(index)">
+                              <downvote v-bind:rating="food.rating"></downvote>
+                            </a>
+                        </div>
+                        <input type="text" class="form-control" v-model="food.comment" placeholder="How may we serve you better?">
+                      </div>
+                  </div>
+
+              </div>
+              <div class="modal-footer">
+                  <button type="button" v-on:click="submit" class="btn btn-info btn-lg">Submit</button>
+                  <button type="button" class="btn btn-default btn-lg" data-dismiss="modal">Close</button>
+              </div>
+          </div>
+
+      </div>
+  </div>`
 });
 
 function to_date(delivery_date, delivery_time) {
@@ -84,11 +195,16 @@ var app = new Vue({
   },
   created: function() {
     orderData = this.orders;
-    axios.get(url).then(function(response) {
-      response.data.forEach(function(element) {
-        orderData.push(element);
+    axios
+      .get(url)
+      .then(function(response) {
+        response.data.forEach(function(element) {
+          orderData.push(element);
+        });
+        console.log(orderData);
+      })
+      .catch(function(error) {
+        console.log(error);
       });
-      console.log(orderData);
-    });
   }
 });
